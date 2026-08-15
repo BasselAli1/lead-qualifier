@@ -1,0 +1,52 @@
+# Editable qualification criteria. Loaded at runtime by
+# src/lead_qualifier/services/rules_engine.py — change this file, not code,
+# to retune what counts as a qualified lead.
+
+# Hard filters: if a lead matches ANY of these, it's auto-disqualified before
+# any embedding/LLM call is made (saves cost on obvious non-fits).
+hard_filters:
+  - field: country
+    operator: not_in
+    value: ["US", "CA", "GB", "AU"]
+    reason: "Outside served geography"
+  - field: company_size
+    operator: lt
+    value: 5
+    reason: "Company too small (fewer than 5 employees)"
+
+# Weighted scoring: each matching rule contributes points toward a 0-100
+# rule_score. Tune `points` per rule to reflect what actually predicts a
+# good customer for you.
+scoring_rules:
+  - field: company_size
+    operator: gte
+    value: 200
+    points: 25
+    label: "Mid-market or larger company"
+  - field: industry
+    operator: in
+    value: ["Software", "SaaS", "Technology"]
+    points: 20
+    label: "Target industry"
+  - field: job_title
+    operator: contains_any
+    value: ["VP", "Director", "Head of", "Chief", "C-level", "Founder"]
+    points: 30
+    label: "Senior / decision-making title"
+  - field: budget
+    operator: gte
+    value: 10000
+    points: 25
+    label: "Budget meets minimum deal size"
+
+# Final score = rule_score * rule_weight + llm_score * llm_weight (both 0-100).
+# Weights must sum to 1.0.
+combine:
+  rule_weight: 0.4
+  llm_weight: 0.6
+
+# Final-score cutoffs for tiering. Anything at/above `hot` is Hot, at/above
+# `warm` is Warm, below that (and not hard-disqualified) is Cold.
+tiers:
+  hot: 75
+  warm: 45

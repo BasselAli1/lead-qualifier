@@ -1,0 +1,73 @@
+[project]
+name = "lead-qualifier"
+version = "0.1.0"
+description = "Hybrid rules + RAG-grounded LLM lead qualification service for HubSpot"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.115.6",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.10.4",
+    "pydantic-settings>=2.7.1",
+    "openai>=1.58.1",
+    "langfuse>=2.55.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "pgvector>=0.3.6",
+    "alembic>=1.14.0",
+    "httpx>=0.28.1",
+    "pyyaml>=6.0.2",
+    "mcp>=1.1.0",
+    "python-json-logger>=2.0.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.0",
+    "pytest-postgresql>=6.1.1",
+    "ruff>=0.8.4",
+    "mypy>=1.14.0",
+]
+
+# FastAPI Cloud only auto-detects main.py/app.py/app/main.py at the repo
+# root — this project is src-layout, so `fastapi run`/`fastapi deploy`
+# need to be told explicitly where the app object is. "src" is omitted
+# from the path since lead_qualifier is installed as a real package (see
+# [tool.hatch.build.targets.wheel] below), not found via a sys.path hack.
+[tool.fastapi]
+entrypoint = "lead_qualifier.api.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lead_qualifier"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "eval: makes real OpenAI API calls against the golden dataset; excluded from default CI run",
+]
+# no:pytest_postgresql: that plugin's autoload imports psycopg, which needs
+# the libpq client library installed on the machine — not guaranteed to be
+# there, and nothing uses the plugin's fixtures yet. Drop this once real
+# DB-integration tests are added (and libpq is available wherever tests run).
+addopts = "-m 'not eval' -p no:pytest_postgresql"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+# Without this, mypy sees Settings() called with zero args in config.py and
+# flags every field with no default as a missing argument — it doesn't know
+# pydantic-settings' BaseSettings populates those from the environment at
+# runtime rather than the constructor call site.
+plugins = ["pydantic.mypy"]
+disallow_untyped_defs = true
