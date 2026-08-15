@@ -1,0 +1,29 @@
+# Local dev database only — matches .env.example's default DATABASE_URL.
+# Neon is used for actual dev/staging/prod (see infrastructure/db/session.py's
+# statement_cache_size comment); this exists so tests and local runs don't
+# have to touch a real remote database, and so pytest-postgresql-style
+# integration tests have something to run against once libpq is available.
+#
+# pgvector/pgvector is the official image with the pgvector extension
+# already built in — CREATE EXTENSION IF NOT EXISTS vector (in alembic's
+# initial migration) still has to run before it's actually enabled in this
+# database; the image only makes that possible, it doesn't do it itself.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lead_qualifier
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
