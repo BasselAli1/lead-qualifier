@@ -51,7 +51,7 @@ RulesConfigDep = Annotated[RulesConfig, Depends(get_rules_config)]
 
 def get_crm() -> CRMPort:
     return HubSpotCRM(
-        api_key=settings.HUBSPOT_API_KEY, webhook_secret=settings.HUBSPOT_WEBHOOK_SECRET
+        access_token=settings.HUBSPOT_ACCESS_TOKEN, webhook_secret=settings.HUBSPOT_WEBHOOK_SECRET
     )
 
 

@@ -50,7 +50,7 @@ def _mock_transport(monkeypatch, handler):
 
 @pytest.fixture
 def crm() -> HubSpotCRM:
-    return HubSpotCRM(api_key="test-api-key", webhook_secret="test-webhook-secret")
+    return HubSpotCRM(access_token="test-access-token", webhook_secret="test-webhook-secret")
 
 
 class TestVerifySignature:

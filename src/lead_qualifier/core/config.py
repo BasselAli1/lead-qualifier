@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
     # HubSpot
-    HUBSPOT_API_KEY: str
+    HUBSPOT_ACCESS_TOKEN: str
     HUBSPOT_WEBHOOK_SECRET: str
 
     # Slack
