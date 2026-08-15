@@ -57,8 +57,8 @@ class HubSpotCRM(CRMPort):
     """Talks to HubSpot's CRM v3 API and validates its v3 webhook
     signature scheme. Built fresh per request in api/deps.py."""
 
-    def __init__(self, api_key: str, webhook_secret: str) -> None:
-        self._api_key = api_key
+    def __init__(self, access_token: str, webhook_secret: str) -> None:
+        self._access_token = access_token
         self._webhook_secret = webhook_secret
 
     def verify_signature(
@@ -143,4 +143,4 @@ class HubSpotCRM(CRMPort):
         response.raise_for_status()
 
     def _auth_header(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._api_key}"}
+        return {"Authorization": f"Bearer {self._access_token}"}
