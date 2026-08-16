@@ -155,13 +155,29 @@ class TestPushQualification:
 
         _mock_transport(monkeypatch, handler)
 
-        await crm.push_qualification("42", Tier.HOT, 88.5, "Strong fit.")
+        await crm.push_qualification("42", Tier.HOT, 88.7, "Strong fit.")
 
         assert captured["path"] == "/crm/v3/objects/contacts/42"
         properties = captured["body"]["properties"]
         assert properties["lead_qualifier_tier"] == "hot"
-        assert properties["lead_qualifier_score"] == 88.5
+        assert properties["lead_qualifier_score"] == 89  # rounded from 88.7
         assert properties["lead_qualifier_rationale"] == "Strong fit."
+
+    async def test_rounds_final_score_to_a_whole_number(self, crm, monkeypatch):
+        """final_score arrives as a float (e.g. 83.19999999999999 from the
+        rule/LLM weighted blend) — HubSpot should get a clean display
+        value, matching what Slack shows for the same result."""
+        captured = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured["body"] = json.loads(request.content)
+            return httpx.Response(200, json={})
+
+        _mock_transport(monkeypatch, handler)
+
+        await crm.push_qualification("42", Tier.HOT, 83.19999999999999, "x")
+
+        assert captured["body"]["properties"]["lead_qualifier_score"] == 83
 
     async def test_raises_on_non_2xx_response(self, crm, monkeypatch):
         def handler(request: httpx.Request) -> httpx.Response:

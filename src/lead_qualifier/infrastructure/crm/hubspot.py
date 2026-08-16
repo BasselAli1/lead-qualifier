@@ -128,6 +128,12 @@ class HubSpotCRM(CRMPort):
         it in HubSpot without leaving the CRM. `lead_qualifier_tier` is
         the same property name domain/models.py's Tier docstring assumes
         its string values serialize to directly, with no conversion step.
+
+        final_score is rounded to a whole number here — HubSpot gets the
+        display-friendly form (matching Slack's own `:.0f` formatting in
+        slack_notifier.py), while the full-precision float is still what
+        gets persisted via LeadRepositoryPort. Rounding is HubSpot-display
+        formatting, not something the rest of the app needs to know about.
         """
         async with httpx.AsyncClient(base_url=_API_BASE, headers=self._auth_header()) as client:
             response = await client.patch(
@@ -135,7 +141,7 @@ class HubSpotCRM(CRMPort):
                 json={
                     "properties": {
                         "lead_qualifier_tier": tier.value,
-                        "lead_qualifier_score": final_score,
+                        "lead_qualifier_score": round(final_score),
                         "lead_qualifier_rationale": rationale,
                     }
                 },
