@@ -11,6 +11,7 @@ real database, LLM, or HTTP call.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 
 from lead_qualifier.core.logging import get_logger
@@ -73,9 +74,17 @@ class QualifyLeadUseCase:
             )
             return None
 
-        # Reused as the Langfuse trace id (see domain/ports.py) so a
-        # lead's Cloud Logging entries and its LLM trace line up.
-        trace_id = f"{lead.external_id}:{lead.updated_at.isoformat()}"
+        # Passed through as the Langfuse trace id (see domain/ports.py) so
+        # a lead's LLM trace can be found from its Cloud Logging
+        # correlation id (webhooks.py sets that from the same
+        # external_id) and vice versa. Langfuse requires a 32-char
+        # lowercase-hex trace id — passing the raw "external_id:iso8601"
+        # string crashes inside its client (int(trace_id, 16)) — so this
+        # deterministically hashes that identifying pair into a valid
+        # UUID5 hex instead of using it directly.
+        trace_id = uuid.uuid5(
+            uuid.NAMESPACE_URL, f"{lead.external_id}:{lead.updated_at.isoformat()}"
+        ).hex
 
         rule_result = rules_engine.evaluate(lead, self._rules_config)
 

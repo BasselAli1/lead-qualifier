@@ -5,6 +5,8 @@ call, per that module's own docstring.
 
 from __future__ import annotations
 
+import uuid
+
 from fakes import FakeCRM, FakeLeadRepository, FakeLLM, FakeNotifier, FakeRetriever
 
 from lead_qualifier.application.qualify_lead import QualifyLeadUseCase
@@ -112,8 +114,15 @@ async def test_trace_id_shared_across_retriever_and_llm(rules_config, make_lead)
 
     await use_case.qualify_from_webhook_event({"objectId": lead.external_id})
 
-    expected_trace_id = f"{lead.external_id}:{lead.updated_at.isoformat()}"
+    expected_trace_id = uuid.uuid5(
+        uuid.NAMESPACE_URL, f"{lead.external_id}:{lead.updated_at.isoformat()}"
+    ).hex
     assert llm.trace_ids == [expected_trace_id]
+    # Langfuse requires exactly this shape (int(trace_id, 16) internally) —
+    # this is the actual property that broke in production before uuid5
+    # replaced the old "external_id:isoformat" trace_id.
+    assert len(expected_trace_id) == 32
+    int(expected_trace_id, 16)
 
 
 async def test_result_is_saved_and_pushed_to_crm(rules_config, make_lead):

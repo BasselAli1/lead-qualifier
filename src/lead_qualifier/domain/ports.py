@@ -10,9 +10,13 @@ from datetime import datetime
 
 from lead_qualifier.domain.models import Lead, LLMResult, QualificationResult, RetrievedChunk, Tier
 
-# `trace_id` on LLMPort/RetrieverPort is the same id used for log correlation
-# (core/logging.py) — reusing it as the Langfuse trace id means one id links
-# a lead's Cloud Logging entries and its Langfuse trace together.
+# `trace_id` on LLMPort/RetrieverPort is derived from the same
+# (external_id, updated_at) pair as the log correlation id (core/logging.py)
+# — see application/qualify_lead.py — so a lead's Cloud Logging entries and
+# its Langfuse trace can still be cross-referenced, even though the two ids
+# aren't literally the same string (Langfuse requires trace_id to be a
+# 32-char lowercase-hex value; the correlation id is just the bare
+# external_id).
 
 
 class CRMPort(ABC):
