@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Type check (mypy)
+        run: uv run mypy src
+
+      - name: Test (pytest)
+        # core/config.py's Settings() is constructed eagerly at import time
+        # and has no defaults for these three, so even tests that never
+        # make a real HubSpot/OpenAI call need dummy values just to import
+        # the app at all. Eval tests (real OpenAI calls against the golden
+        # dataset) are excluded by pyproject.toml's own addopts, same as
+        # running pytest locally with no extra flags.
+        env:
+          OPENAI_API_KEY: test
+          HUBSPOT_ACCESS_TOKEN: test
+          HUBSPOT_WEBHOOK_SECRET: test
+        run: uv run pytest -q
