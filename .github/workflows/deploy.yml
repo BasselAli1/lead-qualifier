@@ -1,12 +1,22 @@
 name: Deploy to FastAPI Cloud
+# Triggers when the CI workflow (ci.yml) finishes on main, not on push
+# directly — so a lint/type/test failure blocks the deploy instead of
+# racing it. NOTE: if `fastapi cloud setup-ci` is ever re-run, it will
+# likely regenerate this file with a plain `on: push` trigger again;
+# re-apply this workflow_run change afterward if so.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 jobs:
   deploy:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: astral-sh/setup-uv@v7
       - run: uv run fastapi deploy
         env:
