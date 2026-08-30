@@ -1,5 +1,7 @@
 # Lead Qualifier
 
+[![CI](https://github.com/BasselAli1/lead-qualifier/actions/workflows/ci.yml/badge.svg)](https://github.com/BasselAli1/lead-qualifier/actions/workflows/ci.yml)
+
 Hybrid rules + RAG-grounded LLM lead qualification service for HubSpot. A
 HubSpot contact update triggers a webhook, the lead is scored by a
 deterministic rules engine and an OpenAI call grounded in your own ICP/sales
